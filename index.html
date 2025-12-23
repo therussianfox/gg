@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Контейнер для вылетающих цифр -->
+    <div id="click-effects-container"></div>
+
     <div class="top-bar">
         <div class="stat-item">💰 $<span id="money-display">0</span></div>
         <div class="stat-item">✨ <span id="gold-display">0</span>г</div>
@@ -25,7 +28,7 @@
             </div>
 
             <div class="click-area">
-                <button class="main-click-btn" onclick="mineSand()">ДОБЫВАТЬ<br>ПЕСОК</button>
+                <button class="main-click-btn" onclick="mineSand(event)">ДОБЫВАТЬ<br>ПЕСОК</button>
             </div>
             
             <div class="action-grid">
