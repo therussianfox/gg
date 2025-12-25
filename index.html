@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Контейнер для вылетающих цифр -->
     <div id="click-effects-container"></div>
 
     <div class="top-bar">
@@ -32,8 +31,8 @@
             </div>
             
             <div class="action-grid">
-                <button onclick="processSand()">Промыть <br>(<span id="process-amount">1</span>кг, Шанс <span id="process-chance-ui">?</span>%)</button>
-                <button onclick="extractGold()">Очистить <br>(<span id="extract-amount">1</span>гр, Шанс 30%)</button>
+                <button onclick="processSand(event)">Промыть <br>(<span id="process-amount">1</span>кг, Шанс <span id="process-chance-ui">?</span>%)</button>
+                <button onclick="extractGold(event)">Очистить <br>(<span id="extract-amount">1</span>гр, Шанс 30%)</button>
                 <button onclick="sellGold()" class="gold-sell">ПРОДАТЬ ВСЁ ЗОЛОТО</button>
             </div>
         </section>

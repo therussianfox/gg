@@ -12,14 +12,13 @@ let state = {
 const prestigeCosts = [100, 500, 700, 1000, 1500, 2500, 3000, 3500, 4000, 5000];
 const MAX_PRESTIGE = 10;
 
-// --- СИСТЕМА ЗВУКА ---
+// --- ЗВУК И ЭФФЕКТЫ ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playClickSound() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+    osc.type = 'sine'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
     gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
@@ -27,23 +26,25 @@ function playClickSound() {
     osc.start(); osc.stop(audioCtx.currentTime + 0.1);
 }
 
-// --- ВИЗУАЛЬНЫЕ ЭФФЕКТЫ ---
-function createFloatingText(x, y, text) {
+function spawnEffect(event, selector, text, color = null) {
+    let x, y;
+    if (event && event.clientX) { x = event.clientX; y = event.clientY; }
+    else {
+        const target = event ? event.target : document.querySelector(selector || '.main-click-btn');
+        const rect = target.getBoundingClientRect();
+        x = rect.left + rect.width / 2; y = rect.top;
+    }
     const el = document.createElement('div');
     el.className = 'floating-text';
-    el.innerText = text;
-    el.style.left = `${x}px`;
-    el.style.top = `${y}px`;
-    el.style.marginLeft = `${(Math.random() - 0.5) * 40}px`;
+    if (color) el.style.color = color;
+    el.innerText = text; el.style.left = `${x}px`; el.style.top = `${y}px`;
     document.getElementById('click-effects-container').appendChild(el);
     setTimeout(() => el.remove(), 800);
 }
 
-// Загрузка
-loadGame();
-updateUI();
+// --- ЛОГИКА ---
+loadGame(); updateUI();
 
-// Рынок (10 сек)
 setInterval(() => {
     state.chanceMod = Math.max(0.01, 0.05 * (1 + (Math.random() * 0.3 - 0.15)));
     state.yieldMod = Math.max(1, 5 * (1 + (Math.random() * 0.3 - 0.15)));
@@ -51,20 +52,17 @@ setInterval(() => {
     updateUI();
 }, 10000);
 
-// Автоматизация (1 сек)
 setInterval(() => {
     let changed = false;
-    if (state.upgrades.mining.autoLevel > 0) {
-        for (let i = 0; i < state.upgrades.mining.autoLevel; i++) mineSand(null, true);
-        changed = true;
+    let pMult = (1 + state.prestigePoints);
+    if (state.upgrades.mining.autoLevel > 0) { 
+        for (let i = 0; i < state.upgrades.mining.autoLevel; i++) mineSand(null, true); changed = true; 
     }
-    if (state.upgrades.refining.autoLevel > 0) {
-        for (let i = 0; i < state.upgrades.refining.autoLevel; i++) processSand(true);
-        changed = true;
+    if (state.upgrades.refining.autoLevel > 0) { 
+        for (let i = 0; i < state.upgrades.refining.autoLevel; i++) processSand(null, true); changed = true; 
     }
-    if (state.upgrades.extraction.autoLevel > 0) {
-        for (let i = 0; i < state.upgrades.extraction.autoLevel; i++) extractGold(true);
-        changed = true;
+    if (state.upgrades.extraction.autoLevel > 0) { 
+        for (let i = 0; i < state.upgrades.extraction.autoLevel; i++) extractGold(null, true); changed = true; 
     }
     if (changed) updateUI();
 }, 1000);
@@ -75,59 +73,42 @@ function showTab(tabId) {
 }
 
 function mineSand(event, silent = false) {
-    let vol = Math.pow(1.1, state.upgrades.mining.level);
-    let totalPower = vol * (1 + state.prestigePoints) * state.multiplier;
-    state.sand += totalPower;
-
-    if (!silent) {
-        playClickSound();
-        if (event && event.clientX) {
-            createFloatingText(event.clientX, event.clientY, `+${totalPower.toFixed(1)}`);
-        } else {
-            const btn = document.querySelector('.main-click-btn');
-            const rect = btn.getBoundingClientRect();
-            createFloatingText(rect.left + rect.width/2, rect.top, `+${totalPower.toFixed(1)}`);
-        }
-        updateUI();
-    }
+    let vol = Math.pow(1.1, state.upgrades.mining.level) * (1 + state.prestigePoints) * state.multiplier;
+    state.sand += vol;
+    if (!silent) { playClickSound(); spawnEffect(event, '.main-click-btn', `+${vol.toFixed(1)}кг`); updateUI(); }
 }
 
-function processSand(silent = false) {
-    let vol = Math.pow(1.1, state.upgrades.refining.level);
+function processSand(event, silent = false) {
+    let vol = Math.pow(1.1, state.upgrades.refining.level) * (1 + state.prestigePoints);
     if (state.sand >= vol) {
         state.sand -= vol;
-        if (Math.random() < state.chanceMod) state.concentrate += state.yieldMod * vol;
+        if (Math.random() < state.chanceMod) {
+            let gained = state.yieldMod * vol; state.concentrate += gained;
+            if (!silent) spawnEffect(event, null, `+${gained.toFixed(1)}г`, "#3498db");
+        }
+        if (!silent) { playClickSound(); updateUI(); }
     }
-    if (!silent) updateUI();
 }
 
-function extractGold(silent = false) {
-    let vol = Math.pow(1.1, state.upgrades.extraction.level);
+function extractGold(event, silent = false) {
+    let vol = Math.pow(1.1, state.upgrades.extraction.level) * (1 + state.prestigePoints);
     if (state.concentrate >= vol) {
         state.concentrate -= vol;
-        if (Math.random() < 0.30) state.gold += vol;
+        if (Math.random() < 0.30) {
+            state.gold += vol;
+            if (!silent) spawnEffect(event, null, `+${vol.toFixed(1)}г золота!`, "#f1c40f");
+        }
+        if (!silent) { playClickSound(); updateUI(); }
     }
-    if (!silent) updateUI();
 }
 
-function sellGold() {
-    state.money += state.gold * state.goldPrice;
-    state.gold = 0;
-    updateUI();
-    saveGame();
-}
+function sellGold() { state.money += state.gold * state.goldPrice; state.gold = 0; updateUI(); saveGame(); }
 
 function buyUpgrade(type, isAuto) {
     let u = state.upgrades[type];
     let key = isAuto ? 'autoLevel' : 'level';
-    let base = isAuto ? u.baseCost * 2 : u.baseCost;
-    let cost = Math.floor(base * Math.pow(1.15, u[key]));
-    if (state.money >= cost) {
-        state.money -= cost;
-        u[key]++;
-        saveGame();
-        updateUI();
-    }
+    let cost = Math.floor((isAuto ? u.baseCost * 2 : u.baseCost) * Math.pow(1.15, u[key]));
+    if (state.money >= cost) { state.money -= cost; u[key]++; playClickSound(); saveGame(); updateUI(); }
 }
 
 function applyPrestige() {
@@ -137,9 +118,8 @@ function applyPrestige() {
             state.prestigePoints++;
             state.gold = 0; state.sand = 0; state.concentrate = 0; state.money = 0;
             Object.values(state.upgrades).forEach(u => { u.level = 0; u.autoLevel = 0; });
-            saveGame();
-            updateUI();
-            alert(state.prestigePoints === MAX_PRESTIGE ? "ПОБЕДА! Все месторождения ваши!" : "Престиж получен!");
+            saveGame(); updateUI();
+            alert(state.prestigePoints === MAX_PRESTIGE ? "ФИНАЛ! Вы скупили все золото!" : "Престиж получен!");
         }
     }
 }
@@ -152,22 +132,22 @@ function updateUI() {
     document.getElementById('chance-val').innerText = (state.chanceMod * 100).toFixed(1) + '%';
     document.getElementById('yield-val').innerText = state.yieldMod.toFixed(1) + 'г';
     document.getElementById('price-val').innerText = state.goldPrice;
-    document.getElementById('process-amount').innerText = Math.pow(1.1, state.upgrades.refining.level).toFixed(1);
+    
+    let pMult = (1 + state.prestigePoints);
+    document.getElementById('process-amount').innerText = (Math.pow(1.1, state.upgrades.refining.level) * pMult).toFixed(1);
+    document.getElementById('extract-amount').innerText = (Math.pow(1.1, state.upgrades.extraction.level) * pMult).toFixed(1);
     document.getElementById('process-chance-ui').innerText = (state.chanceMod * 100).toFixed(1);
-    document.getElementById('extract-amount').innerText = Math.pow(1.1, state.upgrades.extraction.level).toFixed(1);
+    
     document.getElementById('prestige-val').innerText = state.prestigePoints;
     document.getElementById('prestige-bonus').innerText = (state.prestigePoints * 100);
     
     const pBtn = document.getElementById('prestige-btn');
-    const pStat = document.getElementById('prestige-status');
     if (state.prestigePoints < MAX_PRESTIGE) {
         let cost = prestigeCosts[state.prestigePoints];
-        pStat.innerHTML = `Требуется <b>${cost}г</b> золота для сброса`;
+        document.getElementById('prestige-status').innerHTML = `Нужно <b>${cost}г</b> золота`;
         pBtn.disabled = state.gold < cost;
     } else {
-        pStat.innerText = "Игра пройдена!";
-        pBtn.disabled = true;
-        pBtn.innerText = "МАКСИМУМ";
+        document.getElementById('prestige-status').innerText = "Месторождения исчерпаны!"; pBtn.disabled = true;
     }
     renderUpgrades();
 }
@@ -185,23 +165,14 @@ function renderUpgrades() {
     });
 }
 
-function watchAds() {
-    state.multiplier = 2;
-    setTimeout(() => { state.multiplier = 1; updateUI(); }, 60000);
-    updateUI();
-    alert("Бонус x2 активирован!");
-}
+function watchAds() { state.multiplier = 2; setTimeout(() => { state.multiplier = 1; updateUI(); }, 60000); updateUI(); alert("Бонус x2 на 60 сек!"); }
+function saveGame() { localStorage.setItem('goldMiner_final_fixed_v11', JSON.stringify(state)); }
+function loadGame() { let d = localStorage.getItem('goldMiner_final_fixed_v11'); if (d) state = Object.assign(state, JSON.parse(d)); }
 
-function saveGame() { localStorage.setItem('goldMiner_final_2025_v2', JSON.stringify(state)); }
-function loadGame() { let d = localStorage.getItem('goldMiner_final_2025_v2'); if (d) state = Object.assign(state, JSON.parse(d)); }
-
-// ОТЛАДКА
 window.debug = {
-    help: () => console.log("debug.setMoney(n), debug.setGold(n), debug.setUpgr(t, l), debug.setAuto(t, l), debug.reset()"),
     setMoney: (v) => { state.money = v; updateUI(); },
     setGold: (v) => { state.gold = v; updateUI(); },
-    setUpgr: (t, l) => { if(state.upgrades[t]) state.upgrades[t].level = l; updateUI(); },
-    setAuto: (t, l) => { if(state.upgrades[t]) state.upgrades[t].autoLevel = l; updateUI(); },
+    help: () => { console.log("debug.setMoney(n), debug.setGold(n), debug.reset()"); return "Удачи!"; },
     reset: () => { localStorage.clear(); location.reload(); }
 };
-console.log("%c Золотодобытчик 2025: Отладка активна. Введите %cdebug.help()%c", "color: gold; font-weight: bold;", "background: #222; color: #bada55; padding: 2px 5px;", "color: gold;");
+console.log("%c Золотодобытчик 2025: Режим отладки. Введите debug.help()", "color: gold; font-weight: bold;");
