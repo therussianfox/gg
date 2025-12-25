@@ -3,64 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Золотодобытчик 2025</title>
+    <title>Золотоискатель</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="click-effects-container"></div>
+    <div id="game-container">
+        <div id="click-effects-container"></div>
 
-    <div class="top-bar">
-        <div class="stat-item">💰 $<span id="money-display">0</span></div>
-        <div class="stat-item">✨ <span id="gold-display">0</span>г</div>
-        <button class="ad-small-btn" onclick="watchAds()">🚀 x2 (TEST)</button>
+        <div class="top-bar">
+            <div class="stat-item">💰 $<span id="money-display">0</span></div>
+            <div class="stat-item">✨ <span id="gold-display">0</span>г</div>
+            <button class="ad-small-btn" id="ads-btn">🚀 x2 (60 сек)</button>
+        </div>
+
+        <main id="main-screen">
+            <section id="tab-mining" class="tab-content active">
+                <div class="market-ticker">
+                    Рынок: Шанс <b><span id="chance-val">5%</span></b> | Выход: <b><span id="yield-val">5г</span></b> | Цена: <b>$<span id="price-val">50</span></b>
+                </div>
+
+                <div class="resource-counter">
+                    <div class="res-box">Песок: <br><b id="sand-display">0</b> кг</div>
+                    <div class="res-box">Концентрат: <br><b id="conc-display">0</b> гр</div>
+                </div>
+
+                <div class="click-area">
+                    <button class="main-click-btn" id="mine-btn">ДОБЫВАТЬ<br>ПЕСОК</button>
+                </div>
+                
+                <div class="action-grid">
+                    <button id="process-btn">Промыть <br>(<span id="process-amount">1</span>кг, Шанс <span id="process-chance-ui">?</span>%)</button>
+                    <button id="extract-btn">Очистить <br>(<span id="extract-amount">1</span>гр, Шанс 30%)</button>
+                    <button id="sell-btn" class="gold-sell">ПРОДАТЬ ВСЁ ЗОЛОТО</button>
+                </div>
+            </section>
+
+            <section id="tab-upgrades" class="tab-content">
+                <h2 class="tab-title">📈 Ручная добыча</h2>
+                <div id="upgrades-container-manual"></div>
+                
+                <h2 class="tab-title">🤖 Автоматическая добыча</h2>
+                <div id="upgrades-container-auto"></div>
+                
+                <h2 class="tab-title">⚡ Скорость авто-добычи</h2>
+                <div id="upgrades-container-speed"></div>
+            </section>
+
+            <section id="tab-prestige" class="tab-content">
+                <h2 class="tab-title">Престиж</h2>
+                <div class="prestige-card">
+                    <p>Уровень престижа: <b id="prestige-val">0</b>/10</p>
+                    <p>Глобальный бонус: <b id="prestige-bonus">0</b>%</p>
+                    <div class="separator"></div>
+                    <p id="prestige-status">Загрузка...</p>
+                    <button id="prestige-btn" class="prestige-btn">ПОЛУЧИТЬ ПРЕСТИЖ</button>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <button id="tab-mining-btn">⛏️<br>Добыча</button>
+            <button id="tab-upgrades-btn">🛠️<br>Магазин</button>
+            <button id="tab-prestige-btn">🏆<br>Ранг</button>
+        </nav>
     </div>
 
-    <main id="main-screen">
-        <section id="tab-mining" class="tab-content active">
-            <div class="market-ticker">
-                Рынок: Шанс <b><span id="chance-val">5%</span></b> | Выход: <b><span id="yield-val">5г</span></b> | Цена: <b>$<span id="price-val">50</span></b>
-            </div>
+    <div id="loading-screen">
+        <div class="loader">Загрузка игры...</div>
+    </div>
 
-            <div class="resource-counter">
-                <div class="res-box">Песок: <br><b id="sand-display">0</b> кг</div>
-                <div class="res-box">Концентрат: <br><b id="conc-display">0</b> гр</div>
-            </div>
-
-            <div class="click-area">
-                <button class="main-click-btn" onclick="mineSand(event)">ДОБЫВАТЬ<br>ПЕСОК</button>
-            </div>
-            
-            <div class="action-grid">
-                <button onclick="processSand(event)">Промыть <br>(<span id="process-amount">1</span>кг, Шанс <span id="process-chance-ui">?</span>%)</button>
-                <button onclick="extractGold(event)">Очистить <br>(<span id="extract-amount">1</span>гр, Шанс 30%)</button>
-                <button onclick="sellGold()" class="gold-sell">ПРОДАТЬ ВСЁ ЗОЛОТО</button>
-            </div>
-        </section>
-
-        <section id="tab-upgrades" class="tab-content">
-            <h2 class="tab-title">Эффективность (+10% объём)</h2>
-            <div id="upgrades-container-eff"></div>
-            <h2 class="tab-title">Скорость (+1 клик/сек)</h2>
-            <div id="upgrades-container-auto"></div>
-        </section>
-
-        <section id="tab-prestige" class="tab-content">
-            <h2 class="tab-title">Престиж</h2>
-            <div class="prestige-card">
-                <p>Уровень престижа: <b id="prestige-val">0</b>/10</p>
-                <p>Глобальный бонус: <b id="prestige-bonus">0</b>%</p>
-                <div class="separator"></div>
-                <p id="prestige-status">Загрузка...</p>
-                <button onclick="applyPrestige()" id="prestige-btn" class="prestige-btn">ПОЛУЧИТЬ ПРЕСТИЖ</button>
-            </div>
-        </section>
-    </main>
-
-    <nav class="bottom-nav">
-        <button onclick="showTab('tab-mining')">⛏️<br>Добыча</button>
-        <button onclick="showTab('tab-upgrades')">🛠️<br>Магазин</button>
-        <button onclick="showTab('tab-prestige')">🏆<br>Ранг</button>
-    </nav>
+    <script src="https://yandex.ru/games/sdk/v2"></script>
     <script src="script.js"></script>
 </body>
 </html>
