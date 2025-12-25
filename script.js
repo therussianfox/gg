@@ -43,7 +43,20 @@ function spawnEffect(event, selector, text, color = null) {
 }
 
 // --- ЛОГИКА ---
-loadGame(); updateUI();
+// Временная заглушка для загрузки игры (потом заменим на Яндекс SDK)
+function loadGame() {
+    // TODO: Заменить на загрузку через Яндекс SDK
+    console.log("Загрузка игры (будет через Яндекс SDK)");
+}
+
+// Временная заглушка для сохранения игры (потом заменим на Яндекс SDK)
+function saveGame() {
+    // TODO: Заменить на сохранение через Яндекс SDK
+    console.log("Сохранение игры (будет через Яндекс SDK)");
+}
+
+// Инициализация игры
+updateUI();
 
 setInterval(() => {
     state.chanceMod = Math.max(0.01, 0.05 * (1 + (Math.random() * 0.3 - 0.15)));
@@ -79,7 +92,7 @@ function mineSand(event, silent = false) {
 }
 
 function processSand(event, silent = false) {
-    let vol = Math.pow(1.1, state.upgrades.refining.level) * (1 + state.prestigePoints);
+    let vol = Math.pow(1.1, state.upgrades.refining.level) * (1 + state.prestigePoints) * state.multiplier;
     if (state.sand >= vol) {
         state.sand -= vol;
         if (Math.random() < state.chanceMod) {
@@ -91,7 +104,7 @@ function processSand(event, silent = false) {
 }
 
 function extractGold(event, silent = false) {
-    let vol = Math.pow(1.1, state.upgrades.extraction.level) * (1 + state.prestigePoints);
+    let vol = Math.pow(1.1, state.upgrades.extraction.level) * (1 + state.prestigePoints) * state.multiplier;
     if (state.concentrate >= vol) {
         state.concentrate -= vol;
         if (Math.random() < 0.30) {
@@ -102,13 +115,24 @@ function extractGold(event, silent = false) {
     }
 }
 
-function sellGold() { state.money += state.gold * state.goldPrice; state.gold = 0; updateUI(); saveGame(); }
+function sellGold() { 
+    state.money += state.gold * state.goldPrice; 
+    state.gold = 0; 
+    updateUI(); 
+    saveGame(); // Пока оставляем вызов, но это заглушка
+}
 
 function buyUpgrade(type, isAuto) {
     let u = state.upgrades[type];
     let key = isAuto ? 'autoLevel' : 'level';
     let cost = Math.floor((isAuto ? u.baseCost * 2 : u.baseCost) * Math.pow(1.15, u[key]));
-    if (state.money >= cost) { state.money -= cost; u[key]++; playClickSound(); saveGame(); updateUI(); }
+    if (state.money >= cost) { 
+        state.money -= cost; 
+        u[key]++; 
+        playClickSound(); 
+        updateUI(); 
+        saveGame(); // Пока оставляем вызов, но это заглушка
+    }
 }
 
 function applyPrestige() {
@@ -118,8 +142,9 @@ function applyPrestige() {
             state.prestigePoints++;
             state.gold = 0; state.sand = 0; state.concentrate = 0; state.money = 0;
             Object.values(state.upgrades).forEach(u => { u.level = 0; u.autoLevel = 0; });
-            saveGame(); updateUI();
-            alert(state.prestigePoints === MAX_PRESTIGE ? "ФИНАЛ! Вы скупили все золото!" : "Престиж получен!");
+            updateUI();
+            saveGame(); // Пока оставляем вызов, но это заглушка
+            alert(state.prestigePoints === MAX_PRESTIGE ? "ФИНАЛ! Вы добыли все золото!" : "Престиж получен!");
         }
     }
 }
@@ -134,8 +159,8 @@ function updateUI() {
     document.getElementById('price-val').innerText = state.goldPrice;
     
     let pMult = (1 + state.prestigePoints);
-    document.getElementById('process-amount').innerText = (Math.pow(1.1, state.upgrades.refining.level) * pMult).toFixed(1);
-    document.getElementById('extract-amount').innerText = (Math.pow(1.1, state.upgrades.extraction.level) * pMult).toFixed(1);
+    document.getElementById('process-amount').innerText = (Math.pow(1.1, state.upgrades.refining.level) * pMult * state.multiplier).toFixed(1);
+    document.getElementById('extract-amount').innerText = (Math.pow(1.1, state.upgrades.extraction.level) * pMult * state.multiplier).toFixed(1);
     document.getElementById('process-chance-ui').innerText = (state.chanceMod * 100).toFixed(1);
     
     document.getElementById('prestige-val').innerText = state.prestigePoints;
@@ -147,7 +172,8 @@ function updateUI() {
         document.getElementById('prestige-status').innerHTML = `Нужно <b>${cost}г</b> золота`;
         pBtn.disabled = state.gold < cost;
     } else {
-        document.getElementById('prestige-status').innerText = "Месторождения исчерпаны!"; pBtn.disabled = true;
+        document.getElementById('prestige-status').innerText = "Месторождения исчерпаны!"; 
+        pBtn.disabled = true;
     }
     renderUpgrades();
 }
@@ -165,14 +191,35 @@ function renderUpgrades() {
     });
 }
 
-function watchAds() { state.multiplier = 2; setTimeout(() => { state.multiplier = 1; updateUI(); }, 60000); updateUI(); alert("Бонус x2 на 60 сек!"); }
-function saveGame() { localStorage.setItem('goldMiner_final_fixed_v11', JSON.stringify(state)); }
-function loadGame() { let d = localStorage.getItem('goldMiner_final_fixed_v11'); if (d) state = Object.assign(state, JSON.parse(d)); }
+function watchAds() { 
+    state.multiplier = 2; 
+    setTimeout(() => { 
+        state.multiplier = 1; 
+        updateUI(); 
+    }, 60000); 
+    updateUI(); 
+    alert("Бонус x2 на 60 сек! Увеличивается добыча, промывка и очистка!"); 
+}
 
+// Функции для отладки (оставляем, но без localStorage)
 window.debug = {
     setMoney: (v) => { state.money = v; updateUI(); },
     setGold: (v) => { state.gold = v; updateUI(); },
     help: () => { console.log("debug.setMoney(n), debug.setGold(n), debug.reset()"); return "Удачи!"; },
-    reset: () => { localStorage.clear(); location.reload(); }
+    reset: () => { 
+        // Сбрасываем состояние
+        state = {
+            sand: 0, concentrate: 0, gold: 0, money: 0,
+            prestigePoints: 0, multiplier: 1,
+            chanceMod: 0.05, yieldMod: 5, goldPrice: 50,
+            upgrades: {
+                mining: { level: 0, autoLevel: 0, baseCost: 50, name: 'Добыча' },
+                refining: { level: 0, autoLevel: 0, baseCost: 50, name: 'Промывка' },
+                extraction: { level: 0, autoLevel: 0, baseCost: 50, name: 'Очистка' }
+            }
+        };
+        updateUI();
+    }
 };
+
 console.log("%c Золотодобытчик 2025: Режим отладки. Введите debug.help()", "color: gold; font-weight: bold;");
